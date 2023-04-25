@@ -1,0 +1,180 @@
+openapi: 3.0.2
+info:
+  title: Авторизация на внешних сайтах
+  version: "1.0"
+servers:
+  - url: https://auth.t1tf.ru
+paths:
+  /apiv2/set/static_token/{site_id}:  
+    post:
+      tags:
+        - Работные сайты
+      summary: Редирект РС для получения токенов на РС
+      description: Метод вызывается работным сайтом для передачи ключа на получение токена. Далее метод на основе данных из ключа запрашивает access_token и refresh_token в РС и сохраняет их у себя.
+      parameters:
+        - name: site_id
+          in: path
+          description: Работный сайт, для которого необходимо получить токен
+          required: true
+          schema: 
+            type: string
+            enum:
+              - hh.ru
+              - avito.ru
+              - superjob
+              - podbor.io
+          example: hh.ru
+        - name: code
+          in: query
+          description: Код для получения токена на РС
+          required: true
+          schema: 
+            type: string
+          example: y5mKi9ksQrOrKu_aidfdtA
+        - name: state
+          in: query
+          description: "Переменная в формате base64 для получения токена. Состоит из stand_id, user_id, site_id, client_id, secret, need_redirect, return_url"
+          required: true
+          schema: 
+            type: string
+          example: eyJzdGFuZF9pZCI6IjEwOThiZTllLTc3OGUtMTFlZC1hMWViLTAyNDJhYzEyMDAwMiIsInVzZXJfaWQiOiIxNzdmNjBkYy03NzhlLTExZWQtYTFlYi0wMjQyYWMxMjAwMDIiLCJzaXRlX2lkIjoiaGgucnUifQ==
+      responses:
+        "200":
+          description: Successful response
+        "404":
+          description: Not Found
+
+  /apiv1/get/{stand_id}/{user_id}/{site_id}/:
+    get:
+      tags:
+        - Работные сайты
+      summary: Получение токенов из сервиса Авторизации
+      description: Метод для получения ранее сохраненных access_token и refresh_token РС. 
+      parameters:
+        - name: stand_id
+          in: path
+          description: Уникальный ключ стенда
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 1098be9e-778e-11ed-a1eb-0242ac120002
+        - name: user_id
+          in: path
+          description: Уникальный ключ пользователя
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 177f60dc-778e-11ed-a1eb-0242ac120002
+        - name: site_id
+          in: path
+          description: работный сайт, для которого необходимо получить токен
+          required: true
+          schema: 
+            type: string
+            enum:
+              - hh.ru
+              - avito.ru
+              - superjob
+              - podbor.io
+          example: hh.ru
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json: 
+              schema:
+                properties:
+                  access_token:
+                    type: string
+                    example: N0IEAK17N18A9ENETAOCHRD77SIA1TQ75S0GSL3R2PJ098P3CT3COSNBPO4C0NKV
+                  token_type: 
+                    type: string
+                    example: bearer
+                  refresh_token: 
+                    type: string
+                    example: UNUBPSDFSOI6DS4LL87BVKOBQDNJD3BT75DSULV1DJ733QC75VT01C2VNBT1LL3G
+                  expires_in: 
+                    type: string
+                    example: 1209599
+        "404":
+          description: Not Found     
+  /apiv1/set/{stand_id}/{user_id}/{site_id}/:
+    post:
+      tags:
+        - Работные сайты
+      summary: Метод РС для получения токенов на РС (не используется)
+      description: Метод вызывается работным сайтом для передачи ключа на получение токена. Далее метод на основе данных из ключа запрашивает access_token и refresh_token в РС и сохраняет их у себя.
+      parameters:
+        - name: stand_id
+          in: path
+          description: Уникальный ключ стенда
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 1098be9e-778e-11ed-a1eb-0242ac120002
+        - name: user_id
+          in: path
+          description: Уникальный ключ пользователя
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 177f60dc-778e-11ed-a1eb-0242ac120002
+        - name: site_id
+          in: path
+          description: Работный сайт, для которого необходимо получить токен
+          required: true
+          schema: 
+            type: string
+            enum:
+              - hh.ru
+              - avito.ru
+              - superjob
+              - podbor.io
+          example: hh.ru
+        - name: code
+          in: query
+          description: Код для получения токена на РС
+          required: true
+          schema: 
+            type: string
+          example: y5mKi9ksQrOrKu_aidfdtA
+      responses:
+        "200":
+          description: Successful response
+        "404":
+          description: Not Found 
+components:
+  schemas:
+    state:
+      type: object
+      required:
+        - stand_id
+        - user_id
+        - site_id
+      properties:
+        stand_id:
+          type: string
+          description: id системы , которая направила на авторизацию(просто строка для последующего получения токенов, предварительно регистрации не требует)
+        user_id:
+          type: string
+          description: id пользователя, используется для формирования ключа в который бкдет упакован токен
+        site_id: 
+          type: string
+          description: работный сайт используется для ключа в который будет упакован токен
+        client_id: 
+          type: string
+          description: client_id приложения на работном сайте если не указан буде использован указанный в .env
+        secret: 
+          type: string
+          description: secret приложения на работном сайте если не указан буде использован указанный в .env для каждого работного сайта задается отдельно
+        need_redirect:
+          type: number
+          format: tinyint 
+          description: после успешной авторизации и показа отбивки пользователю требуется редирект
+        return_url: 
+          type: string
+          description: url на который будет произведен редирект после успешного получения токенов (обязательный, если need_redirect = 1)
